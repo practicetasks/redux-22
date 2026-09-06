@@ -1,45 +1,29 @@
 import {useDispatch, useSelector} from "react-redux";
 import type {AppDispatch, RootState} from "./app/store.ts";
-import {addBook, type Book} from './app/booksSlice.ts';
-import {AuthorPage} from "./AuthorPage.tsx";
+import {useEffect} from "react";
+import {getBooks} from "./app/booksSlice.ts";
 
 export function App() {
     const dispatch = useDispatch<AppDispatch>();
-    const books = useSelector((state: RootState) => state.books.books);
-    const authors = useSelector((state: RootState) => state.authors.authors);
+    const {isLoading, books, error} = useSelector((state: RootState) => state.books);
 
-    function generate() {
-        const randomId = Math.random();
+    useEffect(() => {
+        dispatch(getBooks());
+    }, []);
 
-        if (authors[0]) {
-            const book: Book = {
-                id: randomId,
-                title: `название #${randomId}`,
-                author: authors[0]
-            }
-            dispatch(addBook(book))
-        } else {
-            alert('Автор не существует')
-        }
+    if (isLoading) {
+        return <p>Загрузка....</p>
+    }
+
+    if (error) {
+        return <p style={{color: 'red'}}>{error}</p>
     }
 
     return (
         <>
-            <h1>React Redux</h1>
-            <form>
-                <input placeholder={'title'}/>
-                <select>
-                    {authors.length > 0 ? authors.map(author => (
-                        <option key={author.id}>{author.name}</option>
-                    )) : <option disabled>Нет автора</option>}
-                </select>
-                <button>create</button>
-            </form>
             {books.map(book => (
-                <p key={book.id}>{book.title} – {book.author.name}</p>
+                <p key={book.id}>{book.title}</p>
             ))}
-
-            <AuthorPage/>
         </>
     )
 }

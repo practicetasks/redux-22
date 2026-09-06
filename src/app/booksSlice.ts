@@ -1,5 +1,6 @@
-import {createSlice, type PayloadAction} from "@reduxjs/toolkit";
+import {createAsyncThunk, createSlice, type PayloadAction} from "@reduxjs/toolkit";
 import type {Author} from "./authorsSlice.ts";
+import * as api from './api.ts';
 
 export type Book = {
     id: number,
@@ -8,16 +9,23 @@ export type Book = {
 }
 
 export type BookState = {
-    books: Book[]
+    books: Book[],
+    isLoading: boolean,
+    error: string | null,
 }
 
 const initialState: BookState = {
-    books: [
-        {id: 1, title: 'название книги 1', author: {id: 1, name: 'author', country: 'UK'}},
-        {id: 2, title: 'название книги 2', author: {id: 2, name: 'author', country: 'UK'}},
-        {id: 3, title: 'название книги 3', author: {id: 3, name: 'author', country: 'UK'}},
-    ]
+    books: [],
+    isLoading: false,
+    error: null
 }
+
+export const getBooks = createAsyncThunk(
+    "books/getAll",
+    () => {
+        return api.getAllBooks();
+    }
+)
 
 const booksSlice = createSlice({
     name: 'books',
@@ -31,6 +39,24 @@ const booksSlice = createSlice({
                 (book) => book.id !== action.payload
             )
         },
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(getBooks.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(getBooks.rejected, (state, action) => {
+                state.isLoading = false;
+                if (action.error.message && action.error.message !== 'Rejected') {
+                    state.error = action.error.message;
+                } else {
+                    state.error = 'неизвестная ошибка, попробуйте позже';
+                }
+            })
+            .addCase(getBooks.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.books = action.payload;
+            })
     }
 })
 
